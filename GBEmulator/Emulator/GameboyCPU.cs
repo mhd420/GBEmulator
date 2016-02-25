@@ -9,14 +9,24 @@ namespace GBEmulator.Emulator
     [Flags]
     public enum CPUFlags : byte
     {
-        Carry = 0x10,
-        HalfCarry = 0x20,
-        Subtract = 0x40,
-        Zero = 0x80,
+        C = 0x10,
+        H = 0x20,
+        N = 0x40,
+        Z = 0x80,
     }
 
     public class GameboyCPU
     {
+
+        #region Constants
+
+        const byte INT_VBLANK = 0x1;
+        const byte INT_LCDSTAT = 0x2;
+        const byte INT_TIMER = 0x4;
+        const byte INT_SERIAL = 0x8;
+        const byte INT_JOYPAD = 0x10;
+
+        #endregion
 
         #region Registers
 
@@ -25,7 +35,8 @@ namespace GBEmulator.Emulator
 
         public CPUFlags Flags;
 
-        public bool Stop, Halt, IntEnabled;
+        public bool Stop, Halt, IME;
+        public byte IE, IF;
 
         public ushort AF
         {
@@ -75,20 +86,67 @@ namespace GBEmulator.Emulator
 
         #endregion
 
+        private GameboyMMU mmu;
+
         private Func<int>[] opCodes;
         private Func<int>[] cbCodes;
 
-        public GameboyCPU()
+        public GameboyCPU(GameboyMMU mmu)
         {
+            this.mmu = mmu;
+
+            SP = 0xFFFE;
+            PC = 0x0000;
+
             InitialiseOpcodes();
             InitialiseCBCodes();
         }
 
-        public int Step()
+        public void Step()
         {
-            return opCodes[0x00]();
+            // Handle interrupts first
+            if (IME && ((IE & IF) != 0))
+            {
+                if (((IE & IF) & INT_VBLANK) != 0)
+                {
+                    CallISR(0x40);
+                    return;
+                }
+                if (((IE & IF) & INT_LCDSTAT) != 0)
+                {
+                    CallISR(0x48);
+                    return;
+                }
+                if (((IE & IF) & INT_TIMER) != 0)
+                {
+                    CallISR(0x50);
+                    return;
+                }
+                if (((IE & IF) & INT_SERIAL) != 0)
+                {
+                    CallISR(0x58);
+                    return;
+                }
+                if (((IE & IF) & INT_JOYPAD) != 0)
+                {
+                    CallISR(0x60);
+                    return;
+                }
+            }
+
+            if (!Halt && !Stop)
+            {
+                byte nextOp = mmu.Read8(PC);
+                mmu.Clock(opCodes[nextOp]());
+            }
+            else
+            {
+                mmu.Clock(4);
+            }
         }
-        
+
+        #region Opcode Map
+
         private void InitialiseOpcodes()
         {
             opCodes = new Func<int>[0xFF];
@@ -673,6 +731,20 @@ namespace GBEmulator.Emulator
             cbCodes[0xFD] = () => { return 8; }; // SET 7,L
             cbCodes[0xFE] = () => { return 16; }; // SET 7,(HL)
             cbCodes[0xFF] = () => { return 8; }; // SET 7,A
+        }
+
+        #endregion
+
+        private void CallISR(byte addr)
+        {
+            mmu.Clock(8);
+            IME = false;
+
+            mmu.Write16(SP, PC);
+            mmu.Clock(8);
+
+            PC = addr;
+            mmu.Clock(4);
         }
 
     }
