@@ -6,13 +6,9 @@ using System.Threading.Tasks;
 
 namespace GBEmulator.Emulator
 {
-    [Flags]
-    public enum CPUFlags : byte
+    public struct CPUFlags
     {
-        C = 0x10,
-        H = 0x20,
-        N = 0x40,
-        Z = 0x80,
+        public bool C, H, N, Z;
     }
 
     public class GameboyCPU
@@ -40,7 +36,7 @@ namespace GBEmulator.Emulator
 
         public ushort AF
         {
-            get { return (ushort)((A << 8) + F); }
+            get { return (ushort)((A << 8) | F); }
             set
             {
                 A = (byte)(value >> 8);
@@ -50,7 +46,7 @@ namespace GBEmulator.Emulator
 
         public ushort BC
         {
-            get { return (ushort)((B << 8) + C); }
+            get { return (ushort)((B << 8) | C); }
             set
             {
                 B = (byte)(value >> 8);
@@ -60,7 +56,7 @@ namespace GBEmulator.Emulator
 
         public ushort DE
         {
-            get { return (ushort)((D << 8) + E); }
+            get { return (ushort)((D << 8) | E); }
             set
             {
                 D = (byte)(value >> 8);
@@ -70,7 +66,7 @@ namespace GBEmulator.Emulator
 
         public ushort HL
         {
-            get { return (ushort)((H << 8) + L); }
+            get { return (ushort)((H << 8) | L); }
             set
             {
                 H = (byte)(value >> 8);
@@ -80,8 +76,20 @@ namespace GBEmulator.Emulator
 
         public byte F
         {
-            get { return (byte)Flags; }
-            set { Flags = (CPUFlags)value; }
+            get
+            {
+                return (byte)((Flags.C ? 0x10 : 0) | 
+                                (Flags.H ? 0x20 : 0) |
+                                (Flags.N ? 0x40 : 0) |
+                                (Flags.Z ? 0x80 : 0));
+            }
+            set
+            {
+                Flags.C = (value & 0x10) != 0;
+                Flags.H = (value & 0x20) != 0;
+                Flags.N = (value & 0x40) != 0;
+                Flags.Z = (value & 0x80) != 0;
+            }
         }
 
         #endregion
@@ -136,7 +144,7 @@ namespace GBEmulator.Emulator
 
             if (!Halt && !Stop)
             {
-                byte nextOp = mmu.Read8(PC);
+                byte nextOp = mmu.Read8(PC++);
                 mmu.Clock(opCodes[nextOp]());
             }
             else
@@ -153,12 +161,12 @@ namespace GBEmulator.Emulator
 
             // 0x0x
             opCodes[0x00] = () => { return 4; }; // NOP
-            opCodes[0x01] = () => { return 12; }; // LD BC,d16
-            opCodes[0x02] = () => { return 8; }; // LD (BC),A
-            opCodes[0x03] = () => { return 8; }; // INC BC
-            opCodes[0x04] = () => { return 4; }; // INC B
-            opCodes[0x05] = () => { return 4; }; // DEC B
-            opCodes[0x06] = () => { return 8; }; // LD B,d8
+            opCodes[0x01] = () => { BC = mmu.Read16(PC); PC += 2; return 12; }; // LD BC,d16
+            opCodes[0x02] = () => { mmu.Write8(BC, A); return 8; }; // LD (BC),A
+            opCodes[0x03] = () => { BC++; return 8; }; // INC BC
+            opCodes[0x04] = () => { B = Inc8(B); return 4; }; // INC B
+            opCodes[0x05] = () => { B = Dec8(B); return 4; }; // DEC B
+            opCodes[0x06] = () => { B = mmu.Read8(PC); PC++; return 8; }; // LD B,d8
             opCodes[0x07] = () => { return 4; }; // RLCA
             opCodes[0x08] = () => { return 20; }; // LD (a16),SP
             opCodes[0x09] = () => { return 8; }; // ADD HL,BC
@@ -735,11 +743,34 @@ namespace GBEmulator.Emulator
 
         #endregion
 
+        private byte Inc8(byte num)
+        {
+            byte result = num++;
+
+            Flags.H = ((((num & 0xF) + 1) & 0x10) != 0);
+            Flags.N = false;
+            Flags.Z = (result == 0);
+
+            return result;
+        }
+
+        private byte Dec8(byte num)
+        {
+            byte result = num--;
+
+            Flags.H = (num == 0x10);
+            Flags.N = true;
+            Flags.Z = (result == 0);
+
+            return result;
+        }
+
         private void CallISR(byte addr)
         {
             mmu.Clock(8);
             IME = false;
 
+            SP -= 2;
             mmu.Write16(SP, PC);
             mmu.Clock(8);
 
