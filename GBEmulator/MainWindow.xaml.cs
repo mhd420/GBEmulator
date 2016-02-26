@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GBEmulator.Emulator;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,9 +21,15 @@ namespace GBEmulator
     /// </summary>
     public partial class MainWindow : Window
     {
+        private GameboyMMU mmu;
+        private GameboyCPU cpu;
+
         public MainWindow()
         {
             InitializeComponent();
+
+            mmu = new GameboyMMU();
+            cpu = new GameboyCPU(mmu);
         }
     }
 }
