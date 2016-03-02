@@ -63,7 +63,9 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Emulator\GameboyCart.cs" />
     <Compile Include="Emulator\GameboyCPU.cs" />
+    <Compile Include="Emulator\GameboyLCD.cs" />
     <Compile Include="Emulator\GameboyMMU.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>

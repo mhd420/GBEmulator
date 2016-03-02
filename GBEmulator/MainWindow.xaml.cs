@@ -29,7 +29,10 @@ namespace GBEmulator
             InitializeComponent();
 
             mmu = new GameboyMMU();
-            cpu = new GameboyCPU(mmu);
+            cpu = new GameboyCPU();
+
+            mmu.CPU = cpu;
+            cpu.MMU = mmu;
         }
     }
 }
