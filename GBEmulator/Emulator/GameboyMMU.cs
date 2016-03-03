@@ -9,6 +9,10 @@ namespace GBEmulator.Emulator
     public class GameboyMMU
     {
         public GameboyCPU CPU;
+        public GameboyLCD LCD;
+        public GameboyCart Cart;
+
+        public byte[] WRAM = new byte[8192];
 
         private bool inBios = true;
         private byte[] gbBios = {
@@ -72,18 +76,22 @@ namespace GBEmulator.Emulator
                 case 0x5000:
                 case 0x6000:
                 case 0x7000:
+                    Cart.Write(addr, data);
                     break;
 
                 case 0x8000: // vram
                 case 0x9000:
+                    LCD.Write(addr, data);
                     break;
 
                 case 0xA000: // external ram
                 case 0xB000:
+                    Cart.Write(addr, data);
                     break;
 
                 case 0xC000: // work ram
                 case 0xD000: 
+                    WRAM[addr]
                     break;
 
                 case 0xE000:
@@ -96,11 +104,11 @@ namespace GBEmulator.Emulator
                     {
                         CPU.IF = data;
                     }
-                    else if ((addr & 0xFE00) == 0xFE00) // oam ram
+                    else if ((addr & 0xFF80) == 0xFF80) // high ram
                     {
 
                     }
-                    else if ((addr & 0xFF80) == 0xFF80) // high ram
+                    else if ((addr & 0xFF00) == 0xFE00) // oam ram
                     {
 
                     }
