@@ -13,8 +13,11 @@ namespace GBEmulator.Emulator
         public GameboyCart Cart;
 
         public byte[] WRAM = new byte[8192];
+        public byte[] HRAM = new byte[128];
 
         private bool inBios = true;
+        private int dmaCyclesLeft = 0;
+
         private byte[] gbBios = {
             0x31,0xFE,0xFF,0xAF,0x21,0xFF,0x9F,0x32,0xCB,0x7C,0x20,0xFB,0x21,0x26,0xFF,0x0E,
             0x11,0x3E,0x80,0x32,0xE2,0x0C,0x3E,0xF3,0xE2,0x32,0x3E,0x77,0x77,0x3E,0xFC,0xE0,
@@ -41,7 +44,8 @@ namespace GBEmulator.Emulator
 
         public void Clock(int cycles)
         {
-
+            if (dmaCyclesLeft > 0)
+                dmaCyclesLeft -= cycles;
         }
 
         public void Write8(ushort addr, byte data)
@@ -66,6 +70,9 @@ namespace GBEmulator.Emulator
 
         private void Write(ushort addr, byte data)
         {
+            if ((dmaCyclesLeft > 0) && ((addr & 0xFF80) != 0xFF80))
+                return;
+
             switch (addr & 0xF000)
             {
                 case 0x0000: // rom bank 0
@@ -81,7 +88,8 @@ namespace GBEmulator.Emulator
 
                 case 0x8000: // vram
                 case 0x9000:
-                    LCD.Write(addr, data);
+                    if (LCD.Mode < 3)
+                        LCD.VRAM[addr & 0x7FFF] = data;
                     break;
 
                 case 0xA000: // external ram
@@ -90,8 +98,8 @@ namespace GBEmulator.Emulator
                     break;
 
                 case 0xC000: // work ram
-                case 0xD000: 
-                    WRAM[addr]
+                case 0xD000:
+                    WRAM[addr & 0x1FFF] = data;
                     break;
 
                 case 0xE000:
@@ -106,10 +114,14 @@ namespace GBEmulator.Emulator
                     }
                     else if ((addr & 0xFF80) == 0xFF80) // high ram
                     {
-
+                        HRAM[addr & 0x007F] = data;
                     }
                     else if ((addr & 0xFF00) == 0xFE00) // oam ram
                     {
+                        var destAddr = addr & 0xFF;
+                        
+                        if ((LCD.Mode < 2) && (destAddr <= 0x9f))
+                            LCD.OAM[destAddr] = data;
 
                     }
                     else if ((addr & 0xFF00) == 0xFF00) // I/0 ports
@@ -132,26 +144,44 @@ namespace GBEmulator.Emulator
 
                             // lcd
                             case 0xFF40: // lcdc - lcd control
+                                LCD.LCDC = data;
                                 break;
                             case 0xFF41: // stat - lcd status 
+                                LCD.STAT = (byte)(data & 0xF8);
                                 break;
                             case 0xFF42: // scy - bg scroll y
+                                LCD.SCY = data;
                                 break;
                             case 0xFF43: // scx - bg scroll x
+                                LCD.SCX = data;
                                 break;
                             case 0xFF45: // lyc - ly compare
+                                LCD.LCY = data;
                                 break;
                             case 0xFF46: // dma - oam dma control
+                                var sourceAddr = Math.Min(data, (byte)0xF1) << 8;
+                                for (var i = 0; i <= 0x9F; i++)
+                                    // copy from specified bytes to oam memory
+                                    LCD.OAM[0xFE00 & i] = Read((ushort)(sourceAddr & i));
+
+                                // about 160 usec for dma to finish - need to block access to everythign except hram
+                                dmaCyclesLeft = 680;
+
                                 break;
                             case 0xFF47: // bgp - background palette
+                                LCD.BGP = data;
                                 break;
                             case 0xFF48: // obp0 - object palette 0
+                                LCD.OBP0 = data;
                                 break;
                             case 0xFF49: // obp1 - object palette 1
+                                LCD.OBP1 = data;
                                 break;
                             case 0xFF4A: // wy - window y pos
+                                LCD.WY = data;
                                 break;
                             case 0xFF4B: //wx - window x pos
+                                LCD.WX = data;
                                 break;
 
                             // sound
@@ -166,6 +196,7 @@ namespace GBEmulator.Emulator
                     else
                     {
                         // echo work ram
+                        WRAM[addr & 0x1FFF] = data;
                     }
                     break;
             }
@@ -173,6 +204,10 @@ namespace GBEmulator.Emulator
 
         private byte Read(ushort addr)
         {
+            // if dma is in progress, you can't access anythign other than high ram
+            if ((dmaCyclesLeft > 0) && ((addr & 0xFF80) != 0xFF80))
+                return 0xFF;
+
             return 0;
         }
     }
