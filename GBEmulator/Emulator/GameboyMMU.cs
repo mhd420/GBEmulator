@@ -147,7 +147,7 @@ namespace GBEmulator.Emulator
                                 LCD.LCDC = data;
                                 break;
                             case 0xFF41: // stat - lcd status 
-                                LCD.STAT = (byte)(data & 0xF8);
+                                LCD.STAT = data;
                                 break;
                             case 0xFF42: // scy - bg scroll y
                                 LCD.SCY = data;
@@ -156,7 +156,7 @@ namespace GBEmulator.Emulator
                                 LCD.SCX = data;
                                 break;
                             case 0xFF45: // lyc - ly compare
-                                LCD.LCY = data;
+                                LCD.LYC = data;
                                 break;
                             case 0xFF46: // dma - oam dma control
                                 var sourceAddr = Math.Min(data, (byte)0xF1) << 8;
@@ -208,7 +208,113 @@ namespace GBEmulator.Emulator
             if ((dmaCyclesLeft > 0) && ((addr & 0xFF80) != 0xFF80))
                 return 0xFF;
 
-            return 0;
+            switch (addr & 0xF000)
+            {
+                case 0x0000: // rom bank 0
+                case 0x1000:
+                case 0x2000:
+                case 0x3000:
+                case 0x4000: // rom bank 1
+                case 0x5000:
+                case 0x6000:
+                case 0x7000:
+                    return Cart.Read(addr);
+
+                case 0x8000: // vram
+                case 0x9000:
+                    if (LCD.Mode < 3)
+                        return LCD.VRAM[addr & 0x7FFF];
+                    else
+                        return 0xFF;
+
+                case 0xA000: // external ram
+                case 0xB000:
+                    return Cart.Read(addr);
+
+                case 0xC000: // work ram
+                case 0xD000:
+                    return WRAM[addr & 0x1FFF];
+
+                case 0xE000:
+                case 0xF000:
+                    if (addr == 0xFFFF) // interrupt enable
+                    {
+                        return CPU.IE;
+                    }
+                    else if (addr == 0xFF0F) // interrupt flag
+                    {
+                        return CPU.IF;
+                    }
+                    else if ((addr & 0xFF80) == 0xFF80) // high ram
+                    {
+                        return HRAM[addr & 0x007F];
+                    }
+                    else if ((addr & 0xFF00) == 0xFE00) // oam ram
+                    {
+                        var destAddr = addr & 0xFF;
+
+                        if ((LCD.Mode < 2) && (destAddr <= 0x9f))
+                            return LCD.OAM[destAddr];
+                        else
+                            return 0xFF;
+
+                    }
+                    else if ((addr & 0xFF00) == 0xFF00) // I/0 ports
+                    {
+                        switch (addr)
+                        {
+                            // input
+                            case 0xFF00: // joypad
+                                break;
+
+                            // timer
+                            case 0xFF04: // div - divider
+                                break;
+                            case 0xFF05: // tima - timer counter
+                                break;
+                            case 0xFF06: // tma - timer modulo
+                                break;
+                            case 0xFF07: // tac - timer control
+                                break;
+
+                            // lcd
+                            case 0xFF40: // lcdc - lcd control
+                                return LCD.LCDC;
+                            case 0xFF41: // stat - lcd status 
+                                return LCD.STAT;
+                            case 0xFF42: // scy - bg scroll y
+                                return LCD.SCY;
+                            case 0xFF43: // scx - bg scroll x
+                                return LCD.SCX;
+                            case 0xFF44: // ly - number of lines drawn
+                                return LCD.LY;
+                            case 0xFF45: // lyc - ly compare
+                                return LCD.LYC;
+                            case 0xFF47: // bgp - background palette
+                                return LCD.BGP;
+                            case 0xFF48: // obp0 - object palette 0
+                                return LCD.OBP0;
+                            case 0xFF49: // obp1 - object palette 1
+                                return LCD.OBP1;
+                            case 0xFF4A: // wy - window y pos
+                                return LCD.WY;
+                            case 0xFF4B: //wx - window x pos
+                                return LCD.WX;
+
+                            // sound
+
+                            // misc
+                        }
+                    }
+                    else
+                    {
+                        // echo work ram
+                        return WRAM[addr & 0x1FFF];
+                    }
+                    break;
+            }
+
+            return 0xFF;
         }
     }
 }
