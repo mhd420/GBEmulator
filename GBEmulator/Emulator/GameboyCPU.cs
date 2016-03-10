@@ -16,11 +16,11 @@ namespace GBEmulator.Emulator
 
         #region Constants
 
-        readonly byte INT_VBLANK = 0x1;
-        readonly byte INT_LCDSTAT = 0x2;
-        readonly byte INT_TIMER = 0x4;
-        readonly byte INT_SERIAL = 0x8;
-        readonly byte INT_JOYPAD = 0x10;
+        public readonly byte INT_VBLANK = 0x1;
+        public readonly byte INT_LCDSTAT = 0x2;
+        public readonly byte INT_TIMER = 0x4;
+        public readonly byte INT_SERIAL = 0x8;
+        public readonly byte INT_JOYPAD = 0x10;
 
         #endregion
 

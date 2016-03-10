@@ -15,8 +15,11 @@ namespace GBEmulator.Emulator
         public byte[] WRAM = new byte[8192];
         public byte[] HRAM = new byte[128];
 
+        public byte DIV, TIMA, TMA, TAC;
+
         private bool inBios = true;
         private int dmaCyclesLeft = 0;
+        private int divCycles, timCycles, timMod;
 
         private byte[] gbBios = {
             0x31,0xFE,0xFF,0xAF,0x21,0xFF,0x9F,0x32,0xCB,0x7C,0x20,0xFB,0x21,0x26,0xFF,0x0E,
@@ -46,6 +49,36 @@ namespace GBEmulator.Emulator
         {
             if (dmaCyclesLeft > 0)
                 dmaCyclesLeft -= cycles;
+
+            // increment the divider
+            divCycles += cycles;
+            if (divCycles >= 256)
+            {
+                DIV++;
+                divCycles -= 256;
+            }
+
+            // check if the timer is enabled
+            if ((TAC & 0x4) == 0x4)
+            {
+                timCycles += cycles;
+                
+                if (timCycles >= timMod)
+                {
+                    if (TIMA == 0xFF)
+                    {
+                        // copy the modulo to the timer
+                        TIMA = TMA;
+                        // enable the timer interrupt
+                        CPU.IF |= CPU.INT_TIMER;
+                    }
+                    else
+                    {
+                        TIMA++;
+                    }
+                    timCycles -= timMod;
+                }
+            }
         }
 
         public void Write8(ushort addr, byte data)
@@ -134,12 +167,33 @@ namespace GBEmulator.Emulator
 
                             // timer
                             case 0xFF04: // div - divider
+                                DIV = 0;
                                 break;
                             case 0xFF05: // tima - timer counter
+                                TIMA = data;
                                 break;
                             case 0xFF06: // tma - timer modulo
+                                TMA = data;
                                 break;
                             case 0xFF07: // tac - timer control
+                                TAC = data;
+
+                                // set the timer divider 
+                                switch (data & 0x3)
+                                {
+                                    case 0x0:
+                                        timMod = 1024;
+                                        break;
+                                    case 0x1:
+                                        timMod = 16;
+                                        break;
+                                    case 0x2:
+                                        timMod = 64;
+                                        break;
+                                    case 0x3:
+                                        timMod = 256;
+                                        break;
+                                }
                                 break;
 
                             // lcd
@@ -269,13 +323,13 @@ namespace GBEmulator.Emulator
 
                             // timer
                             case 0xFF04: // div - divider
-                                break;
+                                return DIV;
                             case 0xFF05: // tima - timer counter
-                                break;
+                                return TIMA;
                             case 0xFF06: // tma - timer modulo
-                                break;
+                                return TMA;
                             case 0xFF07: // tac - timer control
-                                break;
+                                return TAC;
 
                             // lcd
                             case 0xFF40: // lcdc - lcd control
