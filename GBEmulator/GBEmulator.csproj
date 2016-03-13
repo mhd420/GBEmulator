@@ -65,6 +65,7 @@
     </Compile>
     <Compile Include="Emulator\GameboyCart.cs" />
     <Compile Include="Emulator\GameboyCPU.cs" />
+    <Compile Include="Emulator\GameboyInput.cs" />
     <Compile Include="Emulator\GameboyLCD.cs" />
     <Compile Include="Emulator\GameboyMMU.cs" />
     <Compile Include="MainWindow.xaml.cs">
@@ -95,6 +96,7 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <AppDesigner Include="Properties\" />
+    <None Include="ROM\tetris.gb" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -166,13 +167,14 @@ namespace GBEmulator.Emulator
             // Otherwise just fetch and execute next opcode
             byte nextOp = MMU.Read8(PC++);
             MMU.Clock(opCodes[nextOp]());
+            
         }
 
         #region Opcode Map
 
         private void InitialiseOpcodes()
         {
-            opCodes = new Func<int>[0xFF];
+            opCodes = new Func<int>[0x100];
 
             // 0x0x
             opCodes[0x00] = () => { return 4; }; // NOP
@@ -465,7 +467,7 @@ namespace GBEmulator.Emulator
 
         private void InitialiseCBCodes()
         {
-            cbCodes = new Func<int>[0xFF];
+            cbCodes = new Func<int>[0x100];
 
             // 0x0x
             cbCodes[0x00] = () => { B = Rlc8(B); return 8; }; // RLC B

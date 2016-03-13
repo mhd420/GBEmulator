@@ -11,6 +11,7 @@ namespace GBEmulator.Emulator
         public GameboyCPU CPU;
         public GameboyLCD LCD;
         public GameboyCart Cart;
+        public GameboyInput Input;
 
         public byte[] WRAM = new byte[8192];
         public byte[] HRAM = new byte[128];
@@ -79,6 +80,8 @@ namespace GBEmulator.Emulator
                     timCycles -= timMod;
                 }
             }
+
+            LCD.Clock(cycles);
         }
 
         public void Write8(ushort addr, byte data)
@@ -98,7 +101,7 @@ namespace GBEmulator.Emulator
 
         public ushort Read16(ushort addr)
         {
-            return (ushort)((Read(addr) << 8) + Read(addr++));
+            return (ushort)(Read(addr++) + (Read(addr) << 8));
         }
 
         private void Write(ushort addr, byte data)
@@ -163,6 +166,7 @@ namespace GBEmulator.Emulator
                         {
                             // input
                             case 0xFF00: // joypad
+                                Input.Write(data);
                                 break;
 
                             // timer
@@ -272,7 +276,11 @@ namespace GBEmulator.Emulator
                 case 0x5000:
                 case 0x6000:
                 case 0x7000:
-                    return Cart.Read(addr);
+                    // if we're still in the bios, return bios rom. otherwise cart data
+                    if (inBios && (addr & 0xFF00) == 0x0)
+                        return gbBios[addr & 0xFF];
+                    else
+                        return Cart.Read(addr);
 
                 case 0x8000: // vram
                 case 0x9000:
@@ -319,7 +327,7 @@ namespace GBEmulator.Emulator
                         {
                             // input
                             case 0xFF00: // joypad
-                                break;
+                                return Input.Read();
 
                             // timer
                             case 0xFF04: // div - divider
