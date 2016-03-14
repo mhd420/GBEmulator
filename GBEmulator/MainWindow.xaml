@@ -5,20 +5,32 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GBEmulator"
         mc:Ignorable="d"
-        Title="MainWindow" Height="423.333" Width="623" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">
+        Title="MainWindow" Height="392.666" Width="623" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">
     <Grid Margin="10" VerticalAlignment="Top">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" BorderThickness="1" BorderBrush="Black" VerticalAlignment="Top">
-            <Image Width="320" Height="288" Name="Display" 
+        <StackPanel Grid.Column="0">
+            <Border BorderThickness="1" BorderBrush="Black" VerticalAlignment="Top">
+                <Image Width="320" Height="288" Name="Display" 
                    RenderOptions.BitmapScalingMode="NearestNeighbor"
                    RenderOptions.EdgeMode="Aliased"/>
-        </Border>
+            </Border>
 
-        <StackPanel Grid.Column="1" Margin="20">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+
+                <CheckBox Content="Breakpoint" Margin="5" Name="BreakEnabled"/>
+                <TextBox Grid.Column="1" Margin="5" Name="BreakpointAddr"/>
+            </Grid>
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Margin="10">
             <StackPanel.Resources>
                 <Style TargetType="Button">
                     <Setter Property="Padding" Value="10" />

@@ -429,9 +429,9 @@ namespace GBEmulator.Emulator
             opCodes[0xDF] = () => { SP -= 2; MMU.Write16(SP, PC); PC = 0x0018; return 16; }; // RST 0x18
 
             // 0xEx
-            opCodes[0xE0] = () => { MMU.Write8((ushort)(0xFF00 & MMU.Read8(PC++)), A); return 12; }; // LDH (a8),A
+            opCodes[0xE0] = () => { MMU.Write8((ushort)(0xFF00 + MMU.Read8(PC++)), A); return 12; }; // LDH (a8),A
             opCodes[0xE1] = () => { HL = MMU.Read16(SP); SP += 2; return 12; }; // POP HL
-            opCodes[0xE2] = () => { MMU.Write8((ushort)(0xFF00 & C), A); return 8; }; // LD (C),A
+            opCodes[0xE2] = () => { MMU.Write8((ushort)(0xFF00 + C), A); return 8; }; // LD (C),A
             // Missing
             // Missing
             opCodes[0xE5] = () => { SP -= 2; MMU.Write16(SP, HL); return 16; }; // PUSH HL
@@ -447,9 +447,9 @@ namespace GBEmulator.Emulator
             opCodes[0xEF] = () => { SP -= 2; MMU.Write16(SP, PC); PC = 0x0028; return 16; }; // RST 0x28
 
             // 0xFx
-            opCodes[0xF0] = () => { A = MMU.Read8((ushort)(0xFF00 & MMU.Read8(PC++))); return 12; }; // LDH A,(a8)
+            opCodes[0xF0] = () => { A = MMU.Read8((ushort)(0xFF00 + MMU.Read8(PC++))); return 12; }; // LDH A,(a8)
             opCodes[0xF1] = () => { AF = MMU.Read16(SP); SP += 2; return 12; }; // POP AF
-            opCodes[0xF2] = () => { A = MMU.Read8((ushort)(0xFF00 & C)); return 8; }; // LD A,(C)
+            opCodes[0xF2] = () => { A = MMU.Read8((ushort)(0xFF00 + C)); return 8; }; // LD A,(C)
             opCodes[0xF3] = () => { IME = false; return 4; }; // DI
             // Missing
             opCodes[0xF5] = () => { SP -= 2; MMU.Write16(SP, AF); return 16; }; // PUSH AF
@@ -821,7 +821,7 @@ namespace GBEmulator.Emulator
 
         private byte Inc8(byte num)
         {
-            byte result = num++;
+            byte result = (byte)(num + 1);
 
             Flags.H = (((num & 0xF) + 1) & 0x10) != 0;
             Flags.N = false;
@@ -832,7 +832,7 @@ namespace GBEmulator.Emulator
 
         private byte Dec8(byte num)
         {
-            byte result = num--;
+            byte result = (byte)(num - 1);
 
             Flags.H = (num == 0x10);
             Flags.N = true;

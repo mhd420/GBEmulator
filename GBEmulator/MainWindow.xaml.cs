@@ -116,9 +116,17 @@ namespace GBEmulator
 
         private void Frame_Click(object sender, RoutedEventArgs e)
         {
+            ushort breakAddr = 0xFFFF;
+
+            if (BreakEnabled.IsChecked == true)
+                breakAddr = Convert.ToUInt16(BreakpointAddr.Text, 16);
+
             while (!lcd.FrameReady)
             {
                 cpu.Step();
+
+                if (cpu.PC == breakAddr)
+                    break;
             }
 
             lcdImage.WritePixels(new Int32Rect(0, 0, 160, 144), lcd.Screen, 160, 0);
