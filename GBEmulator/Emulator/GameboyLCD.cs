@@ -172,7 +172,10 @@ namespace GBEmulator.Emulator
 
         private void DrawLine()
         {
-
+            for (var x = 0; x < 160; x++)
+            {
+                Screen[x + LY * 160] = LY;
+            }
         }
     }
 }

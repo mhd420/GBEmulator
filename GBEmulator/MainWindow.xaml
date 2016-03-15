@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GBEmulator"
         mc:Ignorable="d"
-        Title="MainWindow" Height="392.666" Width="623" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">
+        Title="MainWindow" Height="462.666" Width="655" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">
     <Grid Margin="10" VerticalAlignment="Top">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
@@ -19,15 +19,26 @@
                    RenderOptions.EdgeMode="Aliased"/>
             </Border>
 
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition/>
-                </Grid.ColumnDefinitions>
+            <ListBox Name="Disassembled" 
+                     Height="100" HorizontalContentAlignment="Stretch">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="4*" />
+                            </Grid.ColumnDefinitions>
 
-                <CheckBox Content="Breakpoint" Margin="5" Name="BreakEnabled"/>
-                <TextBox Grid.Column="1" Margin="5" Name="BreakpointAddr"/>
-            </Grid>
+                            <TextBlock Text="{Binding Address, StringFormat={}{0:X4}}" Grid.Column="0" />
+                            <TextBlock Text="{Binding Data, StringFormat={}{0:X2}}" Grid.Column="1" />
+                            <TextBlock Text="{Binding Instruction, TargetNullValue=''}" Grid.Column="2" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <Button Content="Run To Selected" Click="RunToSelected_Click" />
         </StackPanel>
 
         <StackPanel Grid.Column="1" Margin="10">
@@ -83,15 +94,15 @@
                 <TextBlock Grid.Column="1" Grid.Row="3" Name="RegF"/>
                 <TextBlock Grid.Column="2" Grid.Row="3" Name="RegH"/>
                 <TextBlock Grid.Column="3" Grid.Row="3" Name="RegL"/>
-                
+
                 <TextBlock Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="4" Text="SP" />
                 <TextBlock Grid.Column="2" Grid.ColumnSpan="2" Grid.Row="4" Text="PC" />
 
                 <TextBlock Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="5" Name="RegSP" />
                 <TextBlock Grid.Column="2" Grid.ColumnSpan="2" Grid.Row="5" Name="RegPC" />
-                
+
                 <TextBlock Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="6" Text="Flags" />
-                
+
                 <TextBlock Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="7" Name="RegFlags"/>
             </Grid>
         </StackPanel>

@@ -63,6 +63,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Debugger.cs" />
     <Compile Include="Emulator\GameboyCart.cs" />
     <Compile Include="Emulator\GameboyCPU.cs" />
     <Compile Include="Emulator\GameboyInput.cs" />

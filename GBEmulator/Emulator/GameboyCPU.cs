@@ -203,7 +203,7 @@ namespace GBEmulator.Emulator
             opCodes[0x15] = () => { D = Dec8(D); return 4; }; // DEC D
             opCodes[0x16] = () => { D = MMU.Read8(PC++); return 8; }; // LD D,d8
             opCodes[0x17] = () => { A = Rl8(A); Flags.Z = false; return 4; }; // RLA
-            opCodes[0x18] = () => { PC = (ushort)(PC + (sbyte)MMU.Read8(PC)); return 12; }; // JR r8
+            opCodes[0x18] = () => { PC = (ushort)(PC + (sbyte)MMU.Read8(PC)); PC++; return 12; }; // JR r8
             opCodes[0x19] = () => { HL = Add16(HL, DE); return 8; }; // ADD HL,DE
             opCodes[0x1A] = () => { A = MMU.Read8(DE); return 8; }; // LD A,(DE)
             opCodes[0x1B] = () => { DE--; return 8; }; // DEC DE
@@ -213,7 +213,7 @@ namespace GBEmulator.Emulator
             opCodes[0x1F] = () => { A = Rr8(A); Flags.Z = false; return 4; }; // RRA
 
             // 0x2x
-            opCodes[0x20] = () => { if (Flags.Z) { PC++; return 8; } PC = (ushort)(PC + (sbyte)MMU.Read8(PC)); return 12; }; // JR NZ,r8 8 cycles if false
+            opCodes[0x20] = () => { if (Flags.Z) { PC++; return 8; } PC = (ushort)(PC + (sbyte)MMU.Read8(PC)); PC++; return 12; }; // JR NZ,r8 8 cycles if false
             opCodes[0x21] = () => { HL = MMU.Read16(PC); PC += 2; return 12; }; // LD HL,d16
             opCodes[0x22] = () => { MMU.Write8(HL++, A); return 8; }; // LD (HL+),A
             opCodes[0x23] = () => { HL++; return 8; }; // INC HL
@@ -221,7 +221,7 @@ namespace GBEmulator.Emulator
             opCodes[0x25] = () => { H = Dec8(H); return 4; }; // DEC H
             opCodes[0x26] = () => { H = MMU.Read8(PC++); return 8; }; // LD H,d8
             opCodes[0x27] = () => { A = Daa(A); return 4; }; // DAA
-            opCodes[0x28] = () => { if (!Flags.Z) { PC++; return 8; } PC = (ushort)(PC + (sbyte)MMU.Read8(PC)); return 12; }; // JR Z,r8 8 cycles if false
+            opCodes[0x28] = () => { if (!Flags.Z) { PC++; return 8; } PC = (ushort)(PC + (sbyte)MMU.Read8(PC)); PC++; return 12; }; // JR Z,r8 8 cycles if false
             opCodes[0x29] = () => { HL = Add16(HL, HL); return 8; }; // ADD HL,HL
             opCodes[0x2A] = () => { A = MMU.Read8(HL++); return 8; }; // LD A,(HL+)
             opCodes[0x2B] = () => { HL--;  return 8; }; // DEC HL
@@ -231,7 +231,7 @@ namespace GBEmulator.Emulator
             opCodes[0x2F] = () => { A = (byte)(~A);  return 4; }; // CPL
 
             // 0x3x
-            opCodes[0x30] = () => { if (Flags.C) { PC++; return 8; } PC = (ushort)(PC + (sbyte)MMU.Read8(PC)); return 12; }; // JR NC,r8 8 cycles if false
+            opCodes[0x30] = () => { if (Flags.C) { PC++; return 8; } PC = (ushort)(PC + (sbyte)MMU.Read8(PC)); PC++; return 12; }; // JR NC,r8 8 cycles if false
             opCodes[0x31] = () => { SP = MMU.Read16(PC); PC += 2; return 12; }; // LD SP,d16
             opCodes[0x32] = () => { MMU.Write8(HL--, A); return 8; }; // LD (HL-),A
             opCodes[0x33] = () => { SP++;  return 8; }; // INC SP
@@ -239,7 +239,7 @@ namespace GBEmulator.Emulator
             opCodes[0x35] = () => { MMU.Write8(HL, Dec8(MMU.Read8(HL))); return 12; }; // DEC (HL)
             opCodes[0x36] = () => { MMU.Write8(HL, MMU.Read8(PC++)); return 12; }; // LD (HL),d8
             opCodes[0x37] = () => { Flags.N = false; Flags.H = false; Flags.C = true; return 4; }; // SCF
-            opCodes[0x38] = () => { if (!Flags.C) { PC++; return 8; } PC = (ushort)(PC + (sbyte)MMU.Read8(PC)); return 12; }; // JR C,r8 8 cycles if false
+            opCodes[0x38] = () => { if (!Flags.C) { PC++; return 8; } PC = (ushort)(PC + (sbyte)MMU.Read8(PC)); PC++; return 12; }; // JR C,r8 8 cycles if false
             opCodes[0x39] = () => { HL = Add16(HL, SP); return 8; }; // ADD HL,SP
             opCodes[0x3A] = () => { A = MMU.Read8(HL--); return 8; }; // LD A,(HL-)
             opCodes[0x3B] = () => { SP--; return 8; }; // DEC SP
@@ -397,7 +397,7 @@ namespace GBEmulator.Emulator
             opCodes[0xC1] = () => { BC = MMU.Read16(SP); SP += 2; return 12; }; // POP BC
             opCodes[0xC2] = () => { if (Flags.Z) { PC += 2; return 12; } PC = MMU.Read16(PC); return 16; }; // JP NZ,a16 12 cycles if false
             opCodes[0xC3] = () => { PC = MMU.Read16(PC); return 16; }; // JP a16
-            opCodes[0xC4] = () => { if (Flags.Z) { PC += 2; return 12; } SP -= 2; MMU.Write16(SP, PC); PC = MMU.Read16(PC); return 24; }; // CALL NZ,a16 12 cycles if false
+            opCodes[0xC4] = () => { if (Flags.Z) { PC += 2; return 12; } SP -= 2; MMU.Write16(SP, (ushort)(PC + 2)); PC = MMU.Read16(PC); return 24; }; // CALL NZ,a16 12 cycles if false
             opCodes[0xC5] = () => { SP -= 2; MMU.Write16(SP, BC); return 16; }; // PUSH BC
             opCodes[0xC6] = () => { A = Add8(A, MMU.Read8(PC++)); return 8; }; // ADD A,d8
             opCodes[0xC7] = () => { SP -= 2; MMU.Write16(SP, PC); PC = 0x0000; return 16; }; // RST 0x00
@@ -405,8 +405,8 @@ namespace GBEmulator.Emulator
             opCodes[0xC9] = () => { PC = MMU.Read16(SP); SP += 2; return 16; }; // RET
             opCodes[0xCA] = () => { if (!Flags.Z) { PC += 2; return 12; } PC = MMU.Read16(PC); return 16; }; // JP Z,a16 12 cycles if false
             opCodes[0xCB] = () => { return cbCodes[MMU.Read8(PC++)](); }; // CB Prefix
-            opCodes[0xCC] = () => { if (!Flags.Z) { PC += 2; return 12; } SP -= 2; MMU.Write16(SP, PC); PC = MMU.Read16(PC); return 24; }; // CALL Z,a16 12 cycles if false
-            opCodes[0xCD] = () => { SP -= 2; MMU.Write16(SP, PC); PC = MMU.Read16(PC); return 24; }; // CALL a16
+            opCodes[0xCC] = () => { if (!Flags.Z) { PC += 2; return 12; } SP -= 2; MMU.Write16(SP, (ushort)(PC + 2)); PC = MMU.Read16(PC); return 24; }; // CALL Z,a16 12 cycles if false
+            opCodes[0xCD] = () => { SP -= 2; MMU.Write16(SP, (ushort)(PC + 2)); PC = MMU.Read16(PC); return 24; }; // CALL a16
             opCodes[0xCE] = () => { A = Adc8(A, MMU.Read8(PC++)); return 8; }; // ADC A,d8
             opCodes[0xCF] = () => { SP -= 2; MMU.Write16(SP, PC); PC = 0x0008; return 16; }; // RST 0x08
 
@@ -415,7 +415,7 @@ namespace GBEmulator.Emulator
             opCodes[0xD1] = () => { DE = MMU.Read16(SP); SP += 2; return 12; }; // POP DE
             opCodes[0xD2] = () => { if (Flags.C) { PC += 2; return 12; } PC = MMU.Read16(PC); return 16; }; // JP NC,a16 12 cycles if false
             // Missing
-            opCodes[0xD4] = () => { if (Flags.C) { PC += 2; return 12; } SP -= 2; MMU.Write16(SP, PC); PC = MMU.Read16(PC); return 24; }; // CALL NC,a16 12 cycles if false
+            opCodes[0xD4] = () => { if (Flags.C) { PC += 2; return 12; } SP -= 2; MMU.Write16(SP, (ushort)(PC + 2)); PC = MMU.Read16(PC); return 24; }; // CALL NC,a16 12 cycles if false
             opCodes[0xD5] = () => { SP -= 2; MMU.Write16(SP, DE); return 16; }; // PUSH DE
             opCodes[0xD6] = () => { A = Sub8(A, MMU.Read8(PC++)); return 8; }; // SUB d8
             opCodes[0xD7] = () => { SP -= 2; MMU.Write16(SP, PC); PC = 0x0010; return 16; }; // RST 0x10
@@ -423,7 +423,7 @@ namespace GBEmulator.Emulator
             opCodes[0xD9] = () => { PC = MMU.Read16(SP); SP += 2; IME = true; return 16; }; // RETI
             opCodes[0xDA] = () => { if (!Flags.C) { PC += 2; return 12; } PC = MMU.Read16(PC); return 16; }; // JP C,a16 12 cycles if false
             // Missing
-            opCodes[0xDC] = () => { if (!Flags.C) { PC += 2; return 12; } SP -= 2; MMU.Write16(SP, PC); PC = MMU.Read16(PC); return 24; }; // CALL C,a16 12 cycles if false
+            opCodes[0xDC] = () => { if (!Flags.C) { PC += 2; return 12; } SP -= 2; MMU.Write16(SP, (ushort)(PC + 2)); PC = MMU.Read16(PC); return 24; }; // CALL C,a16 12 cycles if false
             // Missing
             opCodes[0xDE] = () => { A = Sbc8(A, MMU.Read8(PC++)); return 8; }; // SBC A,d8
             opCodes[0xDF] = () => { SP -= 2; MMU.Write16(SP, PC); PC = 0x0018; return 16; }; // RST 0x18

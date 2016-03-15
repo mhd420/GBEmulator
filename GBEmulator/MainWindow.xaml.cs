@@ -27,6 +27,8 @@ namespace GBEmulator
         private GameboyInput input;
         private GameboyCart cart;
 
+        private Debugger debug;
+
         private WriteableBitmap lcdImage;
 
         public MainWindow()
@@ -39,6 +41,8 @@ namespace GBEmulator
             input = new GameboyInput();
             cart = new GameboyCart();
 
+            debug = new Debugger();
+
             mmu.CPU = cpu;
             mmu.Input = input;
             mmu.LCD = lcd;
@@ -47,6 +51,8 @@ namespace GBEmulator
             cpu.MMU = mmu;
 
             lcd.CPU = cpu;
+
+            debug.MMU = mmu;
 
             lcdImage = new WriteableBitmap(160, 144, 96, 96, PixelFormats.Gray8, null);
             Display.Source = lcdImage;
@@ -117,9 +123,7 @@ namespace GBEmulator
         private void Frame_Click(object sender, RoutedEventArgs e)
         {
             ushort breakAddr = 0xFFFF;
-
-            if (BreakEnabled.IsChecked == true)
-                breakAddr = Convert.ToUInt16(BreakpointAddr.Text, 16);
+            
 
             while (!lcd.FrameReady)
             {
@@ -172,6 +176,34 @@ namespace GBEmulator
                 cpu.Flags.N ? "N" : " ",
                 cpu.Flags.H ? "H" : " ",
                 cpu.Flags.C ? "C" : " ");
+
+            Disassembled.ItemsSource = debug.Update(cpu.PC);
+        }
+
+        private void RunToSelected_Click(object sender, RoutedEventArgs e)
+        {
+            if (Disassembled.SelectedItem != null)
+            {
+                var selectedInstruction = (DecompiledInstruction)Disassembled.SelectedItem;
+
+                if (selectedInstruction.Instruction != null)
+                {
+                    ushort breakAddr = selectedInstruction.Address;
+
+                    while (!lcd.FrameReady)
+                    {
+                        cpu.Step();
+
+                        if (cpu.PC == breakAddr)
+                            break;
+                    }
+
+                    lcdImage.WritePixels(new Int32Rect(0, 0, 160, 144), lcd.Screen, 160, 0);
+                    lcd.FrameReady = false;
+
+                    UpdateRegDebug();
+                }
+            }
         }
     }
 }

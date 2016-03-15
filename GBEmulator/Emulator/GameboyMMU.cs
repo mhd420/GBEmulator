@@ -91,7 +91,7 @@ namespace GBEmulator.Emulator
 
         public void Write16(ushort addr, ushort data)
         {
-            Write(addr++, (byte)(data >> 8)); Write(addr, (byte)data);
+            Write(addr++, (byte)data); Write(addr, (byte)(data >> 8));
         }
 
         public byte Read8(ushort addr)
